@@ -1,0 +1,34 @@
+version: '3.7'
+
+services:
+
+  tor:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - SA_PASSWORD=${SA_TEST_PASSWORD}
+      - ACCEPT_EULA=Y
+    ports:
+      - 11433:1433
+    command: bash -c "(while true ; do ./opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P ${SA_TEST_PASSWORD} -q 'CREATE DATABASE ${EPAYMENTS_DB_NAME}; CREATE DATABASE ${USERSTATE_DB_NAME}; CREATE DATABASE ${REPORTING_DB_NAME}' && break; sleep 1; done) & ./opt/mssql/bin/sqlservr"
+
+  proxy:
+    build:
+      context: src/
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_Logging__LogLevel__Default=Debug
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - tor
+      - mongodb
+      - mountebank
+      - rabbitmq
+    ports:
+      - 5005:5005
+
+  start_dependencies:
+    image: dadarek/wait-for-dependencies
+    depends_on:
+      - proxy
+      - tor
+    command: proxy:5005
