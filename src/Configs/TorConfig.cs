@@ -13,6 +13,11 @@
         /// <summary>
         /// Port that listening Tor
         /// </summary>
-        public int Port { get; set; }
+        public int PortFrom { get; set; }
+
+        /// <summary>
+        /// Port that listening Tor
+        /// </summary>
+        public int PortTo { get; set; }
     }
 }

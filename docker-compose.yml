@@ -3,13 +3,13 @@ version: '3.7'
 services:
 
   tor:
-    image: mcr.microsoft.com/mssql/server:2019-latest
+    build:
+      context: tors/
+      dockerfile: Dockerfile
     environment:
-      - SA_PASSWORD=${SA_TEST_PASSWORD}
-      - ACCEPT_EULA=Y
+      - TOR_INSTANCES=30
     ports:
-      - 11433:1433
-    command: bash -c "(while true ; do ./opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P ${SA_TEST_PASSWORD} -q 'CREATE DATABASE ${EPAYMENTS_DB_NAME}; CREATE DATABASE ${USERSTATE_DB_NAME}; CREATE DATABASE ${REPORTING_DB_NAME}' && break; sleep 1; done) & ./opt/mssql/bin/sqlservr"
+      - 9000-9029:9000-9029
 
   proxy:
     build:
@@ -20,9 +20,6 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
       - tor
-      - mongodb
-      - mountebank
-      - rabbitmq
     ports:
       - 5005:5005
 

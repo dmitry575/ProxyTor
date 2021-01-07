@@ -61,7 +61,7 @@ namespace ProxyTor
                 var config = new ConfigProxy();
 
                 config.Port = Configuration.GetValue<int>("Port");
-                config.Tors = Configuration.GetSection("Tors").Get<List<TorConfig>>();
+                config.Tor = Configuration.GetSection("Tor").Get<TorConfig>();
                 config.UseLocalIp = Configuration.GetValue<bool>("UseLocalIp");
                 return config;
             }

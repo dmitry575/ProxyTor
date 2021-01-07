@@ -17,7 +17,7 @@ namespace ProxyTor.Configs
         /// <summary>
         /// Tors proxies
         /// </summary>
-        public List<TorConfig> Tors { get; set; }
+        public TorConfig Tor { get; set; }
 
         /// <summary>
         /// Flag to use sometimes local ip address without nay proxies

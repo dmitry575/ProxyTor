@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using ProxyTor.Models;
 using Titanium.Web.Proxy;
 using Titanium.Web.Proxy.EventArguments;
 using Titanium.Web.Proxy.Exceptions;
@@ -20,15 +21,14 @@ namespace ProxyTor
     public class ProxyTorController : IDisposable
     {
         private readonly ProxyServer _proxyServer;
-        private readonly ExplicitProxyEndPoint _explicitEndPoint;
 
-        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-        private CancellationToken cancellationToken => cancellationTokenSource.Token;
-        private ConcurrentQueue<Tuple<ConsoleColor?, string>> consoleMessageQueue
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private CancellationToken _cancellationToken => _cancellationTokenSource.Token;
+        private readonly ConcurrentQueue<Tuple<ConsoleColor?, string>> _consoleMessageQueue
             = new ConcurrentQueue<Tuple<ConsoleColor?, string>>();
 
         // List of tors proxies
-        private readonly SynchronizedCollection<TorConfig> _tors;
+        private readonly List<TorInfo> _tors;
         private readonly object _syncObj = new object();
         private int _currProxy = 0;
 
@@ -47,11 +47,11 @@ namespace ProxyTor
             {
                 if (exception is ProxyHttpException phex)
                 {
-                    writeToConsole(exception.Message + ": " + phex.InnerException?.Message, ConsoleColor.Red);
+                    WriteToConsole(exception.Message + ": " + phex.InnerException?.Message, ConsoleColor.Red);
                 }
                 else
                 {
-                    writeToConsole(exception.Message, ConsoleColor.Red);
+                    WriteToConsole(exception.Message, ConsoleColor.Red);
                 }
             };
 
@@ -64,10 +64,19 @@ namespace ProxyTor
             _proxyServer.CertificateManager.SaveFakeCertificates = true;
 
 
-            _explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, config.Port, false);
-            _proxyServer.AddEndPoint(_explicitEndPoint);
+            var explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, config.Port, false);
+            _proxyServer.AddEndPoint(explicitEndPoint);
 
-            _tors = new SynchronizedCollection<TorConfig>();
+            _tors = new List<TorInfo>();
+
+            for (var i = config.Tor.PortFrom; i <= config.Tor.PortTo;i++)
+            {
+                _tors.Add(new TorInfo
+                {
+                    HostName = config.Tor.HostName,
+                    Port = i
+                });
+            }
         }
 
         public void StartProxy()
@@ -101,16 +110,16 @@ namespace ProxyTor
         {
             arg.GetState().PipelineInfo.AppendLine(nameof(OnGetCustomUpStreamProxyFunc));
 
-            TorConfig d;
+            TorInfo torInfo;
+
             lock (_syncObj)
             {
-                d = _tors[_currProxy];
+                torInfo = _tors[_currProxy];
                 _currProxy++;
                 if (_currProxy >= _tors.Count)
                 {
                     _currProxy = 0;
                 }
-
             }
 
 
@@ -119,8 +128,8 @@ namespace ProxyTor
             {
                 BypassLocalhost = false,
                 ProxyType = ExternalProxyType.Socks5,
-                HostName = d.HostName,
-                Port = d.Port,
+                HostName = torInfo.HostName,
+                Port = torInfo.Port,
                 UseDefaultCredentials = false
             };
         }
@@ -148,12 +157,12 @@ namespace ProxyTor
                 {
                     var data = frame.Data.ToArray();
                     string str = string.Join(",", data.ToArray().Select(x => x.ToString("X2")));
-                    writeToConsole(str, color);
+                    WriteToConsole(str, color);
                 }
 
                 if (frame.OpCode == WebsocketOpCode.Text)
                 {
-                    writeToConsole(frame.GetText(), color);
+                    WriteToConsole(frame.GetText(), color);
                 }
             }
         }
@@ -170,7 +179,7 @@ namespace ProxyTor
                 e.HttpClient.UpStreamEndPoint = new IPEndPoint(clientLocalIp, 0);
             }
 
-            writeToConsole("Active Client Connections:" + ((ProxyServer)sender).ClientConnectionCount + " " + e.HttpClient.Request.Url);
+            WriteToConsole("Active Client Connections:" + ((ProxyServer)sender).ClientConnectionCount + " " + e.HttpClient.Request.Url);
         }
 
         // Modify response
@@ -179,10 +188,10 @@ namespace ProxyTor
             e.GetState().PipelineInfo.AppendLine(nameof(MultipartRequestPartSent));
 
             var session = (SessionEventArgs)sender;
-            writeToConsole("Multipart form data headers:");
+            WriteToConsole("Multipart form data headers:");
             foreach (var header in e.Headers)
             {
-                writeToConsole(header.ToString());
+                WriteToConsole(header.ToString());
             }
         }
 
@@ -196,17 +205,17 @@ namespace ProxyTor
                 e.DataReceived += WebSocket_DataReceived;
             }
 
-            writeToConsole("Active Server Connections:" + ((ProxyServer)sender).ServerConnectionCount + " " + e.HttpClient.Request.RequestUri);
+            WriteToConsole("Active Server Connections:" + ((ProxyServer)sender).ServerConnectionCount + " " + e.HttpClient.Request.RequestUri);
         }
 
         private async Task OnAfterResponse(object sender, SessionEventArgs e)
         {
-            writeToConsole($"Pipelineinfo: {e.GetState().PipelineInfo}", ConsoleColor.Yellow);
+            WriteToConsole($"Pipelineinfo: {e.GetState().PipelineInfo}", ConsoleColor.Yellow);
         }
 
-        private void writeToConsole(string message, ConsoleColor? consoleColor = null)
+        private void WriteToConsole(string message, ConsoleColor? consoleColor = null)
         {
-            consoleMessageQueue.Enqueue(new Tuple<ConsoleColor?, string>(consoleColor, message));
+            _consoleMessageQueue.Enqueue(new Tuple<ConsoleColor?, string>(consoleColor, message));
             Log.Info(message);
         }
 
@@ -215,9 +224,9 @@ namespace ProxyTor
         /// </summary>
         private async Task listenToConsole()
         {
-            while (!cancellationToken.IsCancellationRequested)
+            while (!_cancellationToken.IsCancellationRequested)
             {
-                while (consoleMessageQueue.TryDequeue(out var item))
+                while (_consoleMessageQueue.TryDequeue(out var item))
                 {
                     var consoleColor = item.Item1;
                     var message = item.Item2;
@@ -242,7 +251,7 @@ namespace ProxyTor
 
         public void Dispose()
         {
-            cancellationTokenSource.Dispose();
+            _cancellationTokenSource.Dispose();
             _proxyServer?.Dispose();
         }
     }

@@ -1,14 +1,16 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS runtime
-
-COPY certificates /usr/share/ca-certificates/
-RUN echo "swiftcom_root.crt" >> /etc/ca-certificates.conf && \
-    echo "swiftcom_rabbit_root.cer" >> /etc/ca-certificates.conf && \
-    echo "epayments_rabbit_root.cer" >> /etc/ca-certificates.conf && \
-    echo "epayments_root.crt" >> /etc/ca-certificates.conf && \
-    update-ca-certificates && \
-    sed 's/DEFAULT@SECLEVEL=2/DEFAULT@SECLEVEL=1/' /etc/ssl/openssl.cnf > /etc/ssl/openssl.cnf.changed && mv /etc/ssl/openssl.cnf.changed /etc/ssl/openssl.cnf
-
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build-env
 WORKDIR /app
-COPY publish .
 
-ENTRYPOINT ["dotnet", "ePayments.ClientService.Verification.Api.dll"]
+# Copy csproj and restore as distinct layers
+COPY *.csproj ./
+RUN dotnet restore
+
+# Copy everything else and build
+COPY . ./
+RUN dotnet publish -f netcoreapp3.1 -o publish/
+
+# Build runtime image
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
+WORKDIR /app
+COPY --from=build-env /app/publish .
+ENTRYPOINT ["dotnet", "ProxyTor.dll"]
