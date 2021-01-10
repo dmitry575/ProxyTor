@@ -5,16 +5,14 @@ using log4net.Config;
 using Microsoft.Extensions.Configuration;
 using System.IO;
 using ProxyTor.Configs;
-using System.Collections.Generic;
 using log4net;
 
 [assembly: XmlConfigurator(Watch = true, ConfigFile = "log4net.config")]
-
 namespace ProxyTor
 {
     class Program
     {
-        public static IConfiguration Configuration { get; set; }
+        private static IConfiguration Configuration { get; set; }
         private static readonly ILog Log = LogManager.GetLogger(typeof(Program));
         static void Main(string[] args)
         {
@@ -34,9 +32,9 @@ namespace ProxyTor
             if (config == null)
             {
                 Console.WriteLine("Invalid configurations:\r\n" +
-                    "Using appsettings.json with parametrs:\r\n"+
-                    "Port - number of proxy port\r\n"+
-                    "UseLocalIp - sometime using your IP address without any tor proxy\r\n"+
+                    "Using d.json with parameters:\r\n" +
+                    "Port - number of proxy port\r\n" +
+                    "UseLocalIp - sometime using your IP address without any tor proxy\r\n" +
                     "Tors - settings for tors proxies");
                 return;
             }

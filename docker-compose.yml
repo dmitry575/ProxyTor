@@ -3,11 +3,13 @@ version: '3.7'
 services:
 
   tor:
+    container_name: tors
     build:
       context: tors/
       dockerfile: Dockerfile
     environment:
       - TOR_INSTANCES=30
+    image: tors_image:latest
     ports:
       - 9000-9029:9000-9029
 

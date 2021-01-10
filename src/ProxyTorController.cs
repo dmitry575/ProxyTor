@@ -90,8 +90,7 @@ namespace ProxyTor
 
             foreach (var endPoint in _proxyServer.ProxyEndPoints)
             {
-                Console.WriteLine("Listening on '{0}' endpoint at Ip {1} and port: {2} ", endPoint.GetType().Name,
-                    endPoint.IpAddress, endPoint.Port);
+                Console.WriteLine($"Listening Proxy endpoint at Ip {endPoint.IpAddress} and port: {endPoint.Port} ");
             }
 
             _proxyServer.GetCustomUpStreamProxyFunc = OnGetCustomUpStreamProxyFunc;
@@ -122,7 +121,7 @@ namespace ProxyTor
                 }
             }
 
-
+            WriteToConsole($"using tor proxy: {torInfo.HostName}:{torInfo.Port}");
             // this is just to show the functionality, provided values are junk
             return new ExternalProxy
             {
