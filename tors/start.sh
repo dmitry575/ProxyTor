@@ -8,11 +8,15 @@ set -e
 # if defined TOR_INSTANCE env variable sets the number of tor instances (default 10)
 TOR_INSTANCES=${TOR_INSTANCES:=10 }
 
+echo "tor instances: $TOR_INSTANCES"
 # if defined TOR_OPTIONSE env variable can be used to add options to TOR
 TOR_OPTIONS=${TOR_OPTIONS:=''}
 
-base_socks_port=9050
-base_control_port=8000
+# default base port
+base_socks_port=${TOR_PORT_BASE:=9050}
+
+echo "tor socks base port: $base_socks_port"
+
 dir_data="/tmp/multitor.$$"
 
 # Create data directory if it doesn't exist
@@ -31,7 +35,6 @@ do
         j=$((i+1))
 
         socks_port=$((base_socks_port+i))
-        control_port=$((base_control_port+i))
 
         if [ ! -d "$dir_data/tor$i" ]; then
                 echo "Creating directory $dir_data/tor$i"
@@ -39,9 +42,9 @@ do
         fi
 
         # Take into account that authentication for the control port is disabled. Must be used in secure and controlled environments
-        echo "Running: tor --RunAsDaemon 1 --CookieAuthentication 0 --HashedControlPassword \"\" --ControlPort 0.0.0.0:$control_port --PidFile tor$i.pid --SocksPort 0.0.0.0:$socks_port --DataDirectory $dir_data/tor$i  -f /etc/tor/torrc"
+        echo "Running: tor --RunAsDaemon 1 --CookieAuthentication 0 --HashedControlPassword \"\" --PidFile tor$i.pid --SocksPort 0.0.0.0:$socks_port --DataDirectory $dir_data/tor$i -f /etc/tor/torrc"
 
-        tor --RunAsDaemon 1 --CookieAuthentication 0 --HashedControlPassword "" --PidFile $dir_data/tor$i/tor$i.pid --SocksPort 0.0.0.0:$socks_port --DataDirectory $dir_data/tor$i
+        tor --RunAsDaemon 1 --CookieAuthentication 0 --HashedControlPassword "" --PidFile $dir_data/tor$i/tor$i.pid --SocksPort 0.0.0.0:$socks_port --DataDirectory $dir_data/tor$i -f /etc/tor/torrc
 done
 
 # So that the container doesn't shut down, sleep this thread

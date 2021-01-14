@@ -44,11 +44,16 @@ namespace ProxyTor
                 // Start proxy controller
                 controller.StartProxy();
 
-                Console.WriteLine("Hit any key to exit..");
-                Console.WriteLine();
-                Console.Read();
+                Console.WriteLine("Hit escape to exit..");
 
+                // it's need only for docker
+                var k = 0;
+                do
+                {
+                    k = Console.Read();
+                } while (k != (int)ConsoleKey.Escape);
                 controller.Stop();
+                Console.WriteLine("Exit from program...");
             }
         }
 

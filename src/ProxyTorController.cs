@@ -69,7 +69,7 @@ namespace ProxyTor
 
             _tors = new List<TorInfo>();
 
-            for (var i = config.Tor.PortFrom; i <= config.Tor.PortTo;i++)
+            for (var i = config.Tor.PortFrom; i <= config.Tor.PortTo; i++)
             {
                 _tors.Add(new TorInfo
                 {
@@ -122,6 +122,7 @@ namespace ProxyTor
             }
 
             WriteToConsole($"using tor proxy: {torInfo.HostName}:{torInfo.Port}");
+
             // this is just to show the functionality, provided values are junk
             return new ExternalProxy
             {

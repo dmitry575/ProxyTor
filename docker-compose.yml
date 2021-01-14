@@ -9,11 +9,12 @@ services:
       dockerfile: Dockerfile
     environment:
       - TOR_INSTANCES=30
+      - TOR_PORT_BASE=9000
     image: tors_image:latest
     ports:
       - 9000-9029:9000-9029
 
-  proxy:
+  proxy_tor:
     build:
       context: src/
       dockerfile: Dockerfile
@@ -28,6 +29,6 @@ services:
   start_dependencies:
     image: dadarek/wait-for-dependencies
     depends_on:
-      - proxy
+      - proxy_tor
       - tor
-    command: proxy:5005
+    command: proxy_tor:5005

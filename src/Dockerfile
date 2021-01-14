@@ -12,5 +12,7 @@ RUN dotnet publish -f netcoreapp3.1 -c Release -o publish/
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
 WORKDIR /app
+
 COPY --from=build-env /app/publish .
+
 ENTRYPOINT ["dotnet", "ProxyTor.dll"]
