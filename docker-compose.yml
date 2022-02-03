@@ -24,11 +24,11 @@ services:
     depends_on:
       - tor
     ports:
-      - 5005:5005
+      - 18087:18087
 
   start_dependencies:
     image: dadarek/wait-for-dependencies
     depends_on:
       - proxy_tor
       - tor
-    command: proxy_tor:5005
+    command: proxy_tor:18087

@@ -26,6 +26,7 @@ namespace ProxyTor
             Configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                
                 .Build();
 
             var config = GetConfig();
@@ -52,7 +53,9 @@ namespace ProxyTor
                 {
                     k = Console.Read();
                 } while (k != (int)ConsoleKey.Escape);
+
                 controller.Stop();
+                
                 Console.WriteLine("Exit from program...");
             }
         }
