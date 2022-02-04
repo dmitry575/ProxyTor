@@ -3,6 +3,7 @@ version: '3.7'
 services:
 
   tor:
+    image: tors_image:latest
     container_name: tors
     build:
       context: tors/
@@ -10,7 +11,6 @@ services:
     environment:
       - TOR_INSTANCES=30
       - TOR_PORT_BASE=9000
-    image: tors_image:latest
     ports:
       - 9000-9029:9000-9029
 
@@ -21,14 +21,15 @@ services:
     environment:
       - ASPNETCORE_Logging__LogLevel__Default=Debug
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_Port=5007
     depends_on:
       - tor
     ports:
-      - 5005:5005
+      - 5007:5007
 
   start_dependencies:
     image: dadarek/wait-for-dependencies
     depends_on:
       - proxy_tor
       - tor
-    command: proxy_tor:5005
+    command: proxy_tor:5007 tors:9000 tors:9001 tors:9002

@@ -26,6 +26,7 @@ namespace ProxyTor
             Configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddEnvironmentVariables("ASPNETCORE_")
                 .Build();
 
             var config = GetConfig();
