@@ -53,7 +53,9 @@ namespace ProxyTor
                 {
                     k = Console.Read();
                 } while (k != (int)ConsoleKey.Escape);
+
                 controller.Stop();
+                
                 Console.WriteLine("Exit from program...");
             }
         }

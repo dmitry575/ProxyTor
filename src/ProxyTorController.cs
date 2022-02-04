@@ -43,7 +43,7 @@ namespace ProxyTor
             _proxyServer = new ProxyServer();
 
 
-            _proxyServer.ExceptionFunc = async exception =>
+            _proxyServer.ExceptionFunc = exception =>
             {
                 if (exception is ProxyHttpException phex)
                 {
@@ -51,12 +51,12 @@ namespace ProxyTor
                 }
                 else
                 {
-                    WriteToConsole(exception.Message, ConsoleColor.Red);
+                    WriteToConsole(exception.ToString(), ConsoleColor.Red);
                 }
             };
 
-            _proxyServer.TcpTimeWaitSeconds = 60;
-            _proxyServer.ConnectionTimeOutSeconds = 65;
+            _proxyServer.TcpTimeWaitSeconds = 160;
+            _proxyServer.ConnectionTimeOutSeconds = 165;
             _proxyServer.ReuseSocket = false;
             _proxyServer.EnableConnectionPool = true;
             _proxyServer.ForwardToUpstreamGateway = true;
