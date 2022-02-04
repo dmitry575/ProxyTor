@@ -2,9 +2,8 @@ version: '3.7'
 
 services:
 
-  tor:
+  tor_servers:
     image: tors_image:latest
-    container_name: tors
     build:
       context: tors/
       dockerfile: Dockerfile
@@ -21,15 +20,9 @@ services:
     environment:
       - ASPNETCORE_Logging__LogLevel__Default=Debug
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_Port=5007
+      - ASPNETCORE_Port=5008
+      - ASPNETCORE_Tor__hostname=tor_servers
     depends_on:
-      - tor
+      - tor_servers
     ports:
-      - 5007:5007
-
-  start_dependencies:
-    image: dadarek/wait-for-dependencies
-    depends_on:
-      - proxy_tor
-      - tor
-    command: proxy_tor:5007 tors:9000 tors:9001 tors:9002
+      - 5008:5008

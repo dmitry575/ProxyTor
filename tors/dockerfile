@@ -10,8 +10,6 @@ EnforceDistinctSubnets 0 \n\
 UseEntryGuards 0 \n\
 ' > torrc
 
-EXPOSE 9050-9080
-
 ADD start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 

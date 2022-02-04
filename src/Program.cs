@@ -48,7 +48,7 @@ namespace ProxyTor
                 Console.WriteLine("Hit escape to exit..");
 
                 // it's need only for docker
-                var k = 0;
+                int k ;
                 do
                 {
                     k = Console.Read();
@@ -64,11 +64,13 @@ namespace ProxyTor
         {
             try
             {
-                var config = new ConfigProxy();
+                var config = new ConfigProxy
+                {
+                    Port = Configuration.GetValue<int>("Port"),
+                    Tor = Configuration.GetSection("Tor").Get<TorConfig>(),
+                    UseLocalIp = Configuration.GetValue<bool>("UseLocalIp")
+                };
 
-                config.Port = Configuration.GetValue<int>("Port");
-                config.Tor = Configuration.GetSection("Tor").Get<TorConfig>();
-                config.UseLocalIp = Configuration.GetValue<bool>("UseLocalIp");
                 return config;
             }
             catch (Exception e)

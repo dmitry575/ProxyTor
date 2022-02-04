@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
 using ProxyTor.Models;
@@ -60,11 +61,11 @@ namespace ProxyTor
             _proxyServer.ReuseSocket = false;
             _proxyServer.EnableConnectionPool = true;
             _proxyServer.ForwardToUpstreamGateway = true;
-
+            _proxyServer.SupportedSslProtocols = SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12 | SslProtocols.Tls13;
             _proxyServer.CertificateManager.SaveFakeCertificates = true;
 
 
-            var explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, config.Port, false);
+            var explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, config.Port, true);
             _proxyServer.AddEndPoint(explicitEndPoint);
 
             _tors = new List<TorInfo>();
@@ -187,7 +188,6 @@ namespace ProxyTor
         {
             e.GetState().PipelineInfo.AppendLine(nameof(MultipartRequestPartSent));
 
-            var session = (SessionEventArgs)sender;
             WriteToConsole("Multipart form data headers:");
             foreach (var header in e.Headers)
             {
