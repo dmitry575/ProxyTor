@@ -65,7 +65,7 @@ namespace ProxyTor
             _proxyServer.CertificateManager.SaveFakeCertificates = true;
 
 
-            var explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, config.Port, true);
+            var explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, config.Port, false);
             _proxyServer.AddEndPoint(explicitEndPoint);
 
             _tors = new List<TorInfo>();
