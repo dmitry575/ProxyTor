@@ -8,7 +8,7 @@ At what a lot of tor servers are raised and each new request coming to the http 
 
 All settings can be made through the `docker-compose.yml` file
 
-`
+```
   tor_servers:
     image: tors_image:latest
     build:
@@ -35,31 +35,33 @@ All settings can be made through the `docker-compose.yml` file
       - tor_servers
     ports:
       - 5008:5008
-`
+```
 
-TOR_INSTANCES - number of instances to start
-TOR_PORT_BASE - port number from which the launch starts
+`TOR_INSTANCES` - number of instances to start
+`TOR_PORT_BASE` - port number from which the launch starts
 
 When changing the `TOR_INSTANCES` and `TOR_PORT_BASE` parameters, don't forget to fix the section:
-`
+```
     ports:
       - 9000-9029:9000-9029
-`
+```
 
-ASPNETCORE_Port - port number on which the HTTP proxy will work
-ASPNETCORE_portFrom - initial server port
-ASPNETCORE_portTo - destination port of servers
+`ASPNETCORE_Port` - port number on which the HTTP proxy will work
+`ASPNETCORE_portFrom` - initial server port
+`ASPNETCORE_portTo` - destination port of servers
 
 ## Run in docker
 
 If you are running on `windows`, you only need to run the `docker-proxy.cmd` file, for other operating systems using `docker-compose`:
-`
+
+```
 docker-compose -f docker-compose.yml build proxy_tor
 docker-compose -f docker-compose.yml up -d
-`
+```
 
 You can use `curl` to check if it works
-`
+```
 curl -k -x http://localhost:5008 https://api.ipify.org?format=json
-`
+```
+
 The result will be tor IP address. If you run it several times, then the IP addresses will change.
