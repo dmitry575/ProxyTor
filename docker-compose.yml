@@ -22,6 +22,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_Port=5008
       - ASPNETCORE_Tor__hostname=tor_servers
+      - ASPNETCORE_portFrom=9000
+      - ASPNETCORE_portTo=9029
     depends_on:
       - tor_servers
     ports:

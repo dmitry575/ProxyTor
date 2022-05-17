@@ -32,7 +32,7 @@ fi
 
 for i in $(seq $TOR_INSTANCES)
 do
-        j=$((i+1))
+        j=$((i))
 
         socks_port=$((base_socks_port+i))
 
