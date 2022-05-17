@@ -11,7 +11,7 @@ services:
       - TOR_INSTANCES=30
       - TOR_PORT_BASE=9000
     ports:
-      - 9001-9030:9001-9030
+      - 9000-9030:9000-9030
 
   proxy_tor:
     build:

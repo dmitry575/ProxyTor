@@ -23,26 +23,24 @@ namespace ProxyTor
     {
         private readonly ProxyServer _proxyServer;
 
-        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private CancellationTokenSource _cancellationTokenSource = new();
         private CancellationToken _cancellationToken => _cancellationTokenSource.Token;
+
         private readonly ConcurrentQueue<Tuple<ConsoleColor?, string>> _consoleMessageQueue
-            = new ConcurrentQueue<Tuple<ConsoleColor?, string>>();
+            = new();
 
         // List of tors proxies
         private readonly List<TorInfo> _tors;
-        private readonly object _syncObj = new object();
+        private readonly object _syncObj = new();
         private int _currProxy = 0;
 
         private static readonly ILog Log = LogManager.GetLogger(typeof(ProxyTorController));
 
-
-
         public ProxyTorController(ConfigProxy config)
         {
-            Task.Run(() => listenToConsole());
+            Task.Run(() => ListenToConsole());
 
             _proxyServer = new ProxyServer();
-
 
             _proxyServer.ExceptionFunc = exception =>
             {
@@ -61,9 +59,9 @@ namespace ProxyTor
             _proxyServer.ReuseSocket = false;
             _proxyServer.EnableConnectionPool = true;
             _proxyServer.ForwardToUpstreamGateway = true;
-            _proxyServer.SupportedSslProtocols = SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12 | SslProtocols.Tls13;
+            _proxyServer.SupportedSslProtocols =
+                SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12 | SslProtocols.Tls13;
             _proxyServer.CertificateManager.SaveFakeCertificates = true;
-
 
             var explicitEndPoint = new ExplicitProxyEndPoint(IPAddress.Any, config.Port, false);
             _proxyServer.AddEndPoint(explicitEndPoint);
@@ -85,28 +83,36 @@ namespace ProxyTor
             _proxyServer.BeforeRequest += OnRequest;
             _proxyServer.BeforeResponse += OnResponse;
             _proxyServer.AfterResponse += OnAfterResponse;
+            _proxyServer.ServerCertificateValidationCallback += OnCertificateValidation;
+            
             _proxyServer.CertificateManager.EnsureRootCertificate(false, false, false);
             _proxyServer.Start();
 
 
             foreach (var endPoint in _proxyServer.ProxyEndPoints)
             {
-                Console.WriteLine($"Listening Proxy endpoint at Ip {endPoint.IpAddress} and port: {endPoint.Port} ");
+                Console.WriteLine($"Listening Proxy endpoint at Ip {endPoint.IpAddress}, port: {endPoint.Port} ");
             }
 
             _proxyServer.GetCustomUpStreamProxyFunc = OnGetCustomUpStreamProxyFunc;
         }
 
+        private Task OnCertificateValidation(object sender, CertificateValidationEventArgs e)
+        {
+            e.IsValid = true;
+            return Task.CompletedTask;
+        }
+
         public void Stop()
         {
-
             _proxyServer.BeforeRequest -= OnRequest;
             _proxyServer.BeforeResponse -= OnResponse;
+            _proxyServer.AfterResponse -= OnAfterResponse;
 
             _proxyServer.Stop();
         }
 
-        private async Task<IExternalProxy> OnGetCustomUpStreamProxyFunc(SessionEventArgsBase arg)
+        private Task<IExternalProxy> OnGetCustomUpStreamProxyFunc(SessionEventArgsBase arg)
         {
             arg.GetState().PipelineInfo.AppendLine(nameof(OnGetCustomUpStreamProxyFunc));
 
@@ -125,14 +131,14 @@ namespace ProxyTor
             WriteToConsole($"using tor proxy: {torInfo.HostName}:{torInfo.Port}");
 
             // this is just to show the functionality, provided values are junk
-            return new ExternalProxy
+            return Task.FromResult<IExternalProxy>(new ExternalProxy
             {
                 BypassLocalhost = false,
                 ProxyType = ExternalProxyType.Socks5,
                 HostName = torInfo.HostName,
                 Port = torInfo.Port,
                 UseDefaultCredentials = false
-            };
+            });
         }
 
 
@@ -152,7 +158,7 @@ namespace ProxyTor
         {
             var color = sent ? ConsoleColor.Green : ConsoleColor.Blue;
 
-            foreach (var frame in args.WebSocketDecoder.Decode(e.Buffer, e.Offset, e.Count))
+            foreach (var frame in args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count))
             {
                 if (frame.OpCode == WebsocketOpCode.Binary)
                 {
@@ -170,7 +176,7 @@ namespace ProxyTor
 
 
         // intercept & cancel redirect or update requests
-        private async Task OnRequest(object sender, SessionEventArgs e)
+        private Task OnRequest(object sender, SessionEventArgs e)
         {
             e.GetState().PipelineInfo.AppendLine(nameof(OnRequest) + ":" + e.HttpClient.Request.RequestUri);
 
@@ -180,11 +186,13 @@ namespace ProxyTor
                 e.HttpClient.UpStreamEndPoint = new IPEndPoint(clientLocalIp, 0);
             }
 
-            WriteToConsole("Active Client Connections:" + ((ProxyServer)sender).ClientConnectionCount + " " + e.HttpClient.Request.Url);
+            WriteToConsole("Active Client Connections:" + ((ProxyServer)sender).ClientConnectionCount + " " +
+                           e.HttpClient.Request.Url);
+            return Task.CompletedTask;
         }
 
         // Modify response
-        private async Task MultipartRequestPartSent(object sender, MultipartRequestPartSentEventArgs e)
+        private Task MultipartRequestPartSent(object sender, MultipartRequestPartSentEventArgs e)
         {
             e.GetState().PipelineInfo.AppendLine(nameof(MultipartRequestPartSent));
 
@@ -193,9 +201,11 @@ namespace ProxyTor
             {
                 WriteToConsole(header.ToString());
             }
+
+            return Task.CompletedTask;
         }
 
-        private async Task OnResponse(object sender, SessionEventArgs e)
+        private Task OnResponse(object sender, SessionEventArgs e)
         {
             e.GetState().PipelineInfo.AppendLine(nameof(OnResponse));
 
@@ -205,12 +215,15 @@ namespace ProxyTor
                 e.DataReceived += WebSocket_DataReceived;
             }
 
-            WriteToConsole("Active Server Connections:" + ((ProxyServer)sender).ServerConnectionCount + " " + e.HttpClient.Request.RequestUri);
+            WriteToConsole("Active Server Connections:" + ((ProxyServer)sender).ServerConnectionCount + " " +
+                           e.HttpClient.Request.RequestUri);
+            return Task.CompletedTask;
         }
 
-        private async Task OnAfterResponse(object sender, SessionEventArgs e)
+        private Task OnAfterResponse(object sender, SessionEventArgs e)
         {
             WriteToConsole($"Pipelineinfo: {e.GetState().PipelineInfo}", ConsoleColor.Yellow);
+            return Task.CompletedTask;
         }
 
         private void WriteToConsole(string message, ConsoleColor? consoleColor = null)
@@ -222,7 +235,7 @@ namespace ProxyTor
         /// <summary>
         /// Listening console
         /// </summary>
-        private async Task listenToConsole()
+        private async Task ListenToConsole()
         {
             while (!_cancellationToken.IsCancellationRequested)
             {
@@ -245,7 +258,7 @@ namespace ProxyTor
                 }
 
                 //reduce CPU usage
-                await Task.Delay(50);
+                await Task.Delay(50, _cancellationToken);
             }
         }
 
